@@ -14,6 +14,7 @@ CRITICAL INSTRUCTIONS:
 3. If they are not entitled to software, offer to create a ticket. 
 4. If the user confirms they want a ticket created (e.g., "yes", "sure"), infer the software name and issue from the conversation history and immediately use the create_ticket tool. Do not check entitlements again.
 5. If a request is outside IT scope (e.g., writing poems, sports, cooking), politely and gracefully refuse.
+6. Keep all your responses sharp, concise, and professional. Avoid unnecessary conversational filler.
 `;
 
 async function processChat(userMessage, history = []) {
@@ -63,6 +64,14 @@ async function processChat(userMessage, history = []) {
                         const ticket = db.createTicket(args.userId, args.issue, args.priority || 'medium');
                         toolResult = { ticket };
                         logTrace(`Tool result: Ticket created successfully (${ticket.id})`);
+                    } else if (name === "get_ticket_status") {
+                        const status = db.getTicketStatus(args.ticketId);
+                        toolResult = { status };
+                        logTrace(`Tool result: Ticket status lookup for ${args.ticketId} returned ${status.found}`);
+                    } else if (name === "reset_password") {
+                        const reset = db.resetPassword(args.userId);
+                        toolResult = { reset };
+                        logTrace(`Tool result: Password reset triggered for ${args.userId}`);
                     }
                 } catch (error) {
                     logTrace(`[ERROR] Internal system execution failed: ${error.message}`);

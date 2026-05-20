@@ -8,6 +8,7 @@ function App() {
   const [input, setInput] = useState('');
   const [traces, setTraces] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showTraces, setShowTraces] = useState(false);
 
   const chatEndRef = useRef(null);
   const tracesEndRef = useRef(null);
@@ -19,7 +20,7 @@ function App() {
 
   useEffect(() => {
     tracesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [traces]);
+  }, [traces, showTraces]); // Added showTraces dependency to scroll properly when opened
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -54,9 +55,15 @@ function App() {
     <div className="app-container">
       
       {/* Left Panel: Chat Interface */}
-      <div className="chat-panel">
+      <div className="chat-panel" style={{ flex: showTraces ? 6 : 1 }}>
         <div className="chat-header">
-          DeskMate IT Helpdesk
+          <span>DeskMate IT Helpdesk</span>
+          <button 
+            onClick={() => setShowTraces(!showTraces)} 
+            className={`trace-toggle-btn ${showTraces ? 'active' : ''}`}
+          >
+            Trace the agent
+          </button>
         </div>
         
         {/* Chat Messages */}
@@ -99,13 +106,15 @@ function App() {
       </div>
 
       {/* Right Panel: Observability Traces */}
-      <div className="trace-panel">
-        <h2 className="trace-header">Agent Execution Traces</h2>
-        {traces.map((trace, idx) => (
-          <div key={idx} className="trace-line">{trace}</div>
-        ))}
-        <div ref={tracesEndRef} />
-      </div>
+      {showTraces && (
+        <div className="trace-panel">
+          <h2 className="trace-header">Agent Execution Traces</h2>
+          {traces.map((trace, idx) => (
+            <div key={idx} className="trace-line">{trace}</div>
+          ))}
+          <div ref={tracesEndRef} />
+        </div>
+      )}
     </div>
   );
 }

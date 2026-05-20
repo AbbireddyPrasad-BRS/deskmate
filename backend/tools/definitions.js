@@ -23,6 +23,28 @@ const tools = [
             },
             required: ["userId", "issue", "priority"]
         }
+    },
+    {
+        name: "get_ticket_status",
+        description: "Fetch the current status and details of an IT support ticket.",
+        parameters: {
+            type: "object",
+            properties: {
+                ticketId: { type: "string", description: "The ticket ID to look up (e.g., INC-1042)" }
+            },
+            required: ["ticketId"]
+        }
+    },
+    {
+        name: "reset_password",
+        description: "Trigger a password reset workflow for an employee.",
+        parameters: {
+            type: "object",
+            properties: {
+                userId: { type: "string", description: "The employee ID to reset the password for" }
+            },
+            required: ["userId"]
+        }
     }
 ];
 

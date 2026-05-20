@@ -32,6 +32,15 @@ class MockDatabase {
         this.tickets.push(newTicket);
         return newTicket;
     }
+
+    getTicketStatus(ticketId) {
+        const ticket = this.tickets.find(t => t.id === ticketId);
+        return ticket ? { found: true, ...ticket } : { found: false, message: "Ticket not found." };
+    }
+
+    resetPassword(userId) {
+        return { success: true, message: `Password reset link successfully sent to employee ${userId}.` };
+    }
 }
 
 // Export as singleton for state persistence while the server runs
