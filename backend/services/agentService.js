@@ -42,47 +42,62 @@ async function processChat(userMessage, history = []) {
         let result = await chat.sendMessage(userMessage);
         let response = result.response;
         let calls = typeof response.functionCalls === 'function' ? response.functionCalls() : response.functionCalls;
-        let functionCall = calls ? calls[0] : null;
 
         // Agent Loop: Handle conditional workflows and multiple tool executions
-        while (functionCall) {
-            const { name, args } = functionCall;
-            logTrace(`Invoking tool: ${name} with args: ${JSON.stringify(args)}`);
+        while (calls && calls.length > 0) {
+            const functionResponses = [];
 
-            let toolResult = {};
+            for (const call of calls) {
+                const { name, args } = call;
+                logTrace(`Invoking tool: ${name} with args: ${JSON.stringify(args)}`);
 
-            // Tool Execution Router
-            try {
-                if (name === "check_entitlement") {
-                    const isEntitled = db.checkEntitlement(args.userId, args.software);
-                    toolResult = { isEntitled };
-                    logTrace(`Tool result: Entitlement is ${isEntitled}`);
-                } else if (name === "create_ticket") {
-                    const ticket = db.createTicket(args.userId, args.issue, args.priority);
-                    toolResult = { ticket };
-                    logTrace(`Tool result: Ticket created successfully (${ticket.id})`);
+                let toolResult = {};
+
+                // Tool Execution Router
+                try {
+                    if (name === "check_entitlement") {
+                        const isEntitled = db.checkEntitlement(args.userId, args.software);
+                        toolResult = { isEntitled };
+                        logTrace(`Tool result: Entitlement is ${isEntitled}`);
+                    } else if (name === "create_ticket") {
+                        const ticket = db.createTicket(args.userId, args.issue, args.priority || 'medium');
+                        toolResult = { ticket };
+                        logTrace(`Tool result: Ticket created successfully (${ticket.id})`);
+                    }
+                } catch (error) {
+                    logTrace(`[ERROR] Internal system execution failed: ${error.message}`);
+                    toolResult = { error: "System failure." };
                 }
                 
-                // Send the internal system result back to Gemini so it can reason on it
-                result = await chat.sendMessage([{
+                functionResponses.push({
                     functionResponse: { name, response: toolResult }
-                }]);
+                });
+            }
+
+            try {
+                // Send ALL internal system results back to Gemini so it can reason on them
+                result = await chat.sendMessage(functionResponses);
                 response = result.response;
                 
                 // Check if Gemini decides to call ANOTHER tool based on the result
                 calls = typeof response.functionCalls === 'function' ? response.functionCalls() : response.functionCalls;
-                functionCall = calls ? calls[0] : null;
-
             } catch (error) {
-                logTrace(`[ERROR] Internal system execution failed: ${error.message}`);
-                result = await chat.sendMessage([{ functionResponse: { name, response: { error: "System failure." } } }]);
-                response = result.response;
+                logTrace(`[ERROR] Communication with Gemini failed: ${error.message}`);
                 break; // Break the loop on failure to prevent infinite loops
             }
         }
 
         logTrace("Generated final natural language response.");
-        return { reply: response.text(), traces };
+        
+        let finalReply = "";
+        try {
+            finalReply = response.text();
+            if (!finalReply) finalReply = "I have processed your request. Let me know if you need anything else!";
+        } catch (error) {
+            finalReply = "I have completed the tasks. Is there anything else you need?";
+        }
+        
+        return { reply: finalReply, traces };
     } catch (error) {
         return { reply: "I'm sorry, I encountered a critical error processing your request.", traces: [...traces, `[FATAL] ${error.message}`] };
     }
