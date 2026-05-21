@@ -24,6 +24,9 @@ https://deskmate-ai.netlify.app/
 GitHub Repository:
 https://github.com/AbbireddyPrasad-BRS/deskmate
 
+Sample Run (Demo):
+https://drive.google.com/file/d/1ef2JPJBQwFvQ2h7jWVj0IdYST9CUBtVd/view?usp=sharing
+
 ---
 
 # Problem Statement
